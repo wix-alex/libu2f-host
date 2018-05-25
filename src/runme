@@ -1,0 +1,42 @@
+mkdir -p validation-data
+#
+# get challenge from registration server
+echo REGISTRATION
+echo 01-01-getchallenge
+curl 'https://demo.yubico.com/wsapi/u2f/enroll?username=jas&password=foo' > validation-data/01-01-getchallenge
+cat validation-data/01-01-getchallenge
+echo
+#  generate response to challenge from server - requires touching key
+echo 01-02-challenge-response 
+echo -- TOUCH KEY --
+echo
+./u2f-host -aregister -o https://demo.yubico.com < validation-data/01-01-getchallenge > validation-data/01-02-challenge-response
+cat validation-data/01-02-register
+echo
+# send response to server for validation
+curl https://demo.yubico.com/wsapi/u2f/bind -d "username=jas&password=foo&data=`cat validation-data/01-02-challenge-response`" > validation-data/01-03-server-register
+echo 01-03-server-register
+cat validation-data/01-03-server-register
+echo
+# 
+# Authenticate
+echo AUTHENTICATION
+curl 'https://demo.yubico.com/wsapi/u2f/sign?username=jas&password=foo' > validation-data/02-01-getchallenge
+echo 02-01-getchallenge
+cat validation-data/02-01-getchallenge
+echo
+# generate response to challenge
+echo 02-02-challenge-response
+echo -- TOUCH KEY --
+echo
+./u2f-host -aauthenticate -o https://demo.yubico.com < validation-data/02-01-getchallenge > validation-data/02-02-challenge-response
+cat validation-data/02-02-challenge-response
+echo
+# send response to server for validation
+curl https://demo.yubico.com/wsapi/u2f/verify -d "username=jas&password=foo&data=`cat validation-data/02-02-challenge-response`" > validation-data/02-03-server-authenticate
+echo 02-03-server-authenticate
+cat validation-data/02-03-server-authenticate
+echo
+###
+echo DONE
+
